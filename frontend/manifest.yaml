@@ -97,7 +97,7 @@ apiVersion: apps/v1
 metadata:
   name: frontend
   namespace: expense
-  # these labels are deployment related labels 
+  # these labels are deployment related labels
   labels:
     component: frontend
     project: expense
@@ -119,11 +119,30 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ramudevops321/frontend:v1.0
-        envFrom:
-        - configMapRef:
-            name: frontend 
-  
+        image: joindevops/frontend:v1.0
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "150m"
+            memory: "256Mi"
+        volumeMounts:
+        - name: nginx-conf
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+          readOnly: true
+        # envFrom:
+        # - configMapRef:
+        #     name: frontend
+      volumes:
+      - name: nginx-conf
+        configMap:
+          name: frontend
+          items:
+          - key: nginx.conf
+            path: nginx.conf
+
 ---
 apiVersion: v1
 kind: Service
@@ -131,12 +150,23 @@ metadata:
   name: frontend
   namespace: expense
 spec:
-  type: LoadBalancer
+  #type: LoadBalancer
   selector:
-    project: expense
     component: frontend
+    project: expense
     tier: web
   ports:
   - protocol: TCP
     port: 80 #service-port
-    targetPort: 80 #target-port
+    targetPort: 8080 #target-port
+---
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: frontend
+  namespace: expense
+spec:
+  serviceRef:
+    name: frontend # route traffic to the awesome-service
+    port: 80
+  targetGroupARN: arn:aws:elasticloadbalancing:us-east-1:315069654700:targetgroup/expense-dev-frontend/709ac65514f95b53
