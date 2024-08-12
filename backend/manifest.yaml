@@ -34,7 +34,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: ramudevops321/backend:v1.0
+        image: ramudevops32/backend:v1.0
         envFrom:
         - configMapRef:
             name: backend 
